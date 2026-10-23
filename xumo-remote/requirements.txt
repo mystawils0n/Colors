@@ -1,0 +1,2 @@
+aiohomekit>=3.2
+aiohttp>=3.9

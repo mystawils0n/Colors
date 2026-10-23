@@ -1,0 +1,5 @@
+# Pairing keys for your TV - keep these private
+pairing.json
+charmap.json
+fake_tv.state
+__pycache__/

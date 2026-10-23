@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#111318">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>TV Remote</title>
+<style>
+  :root {
+    --bg: #111318; --body: #1c1f26; --btn: #2a2e37; --btn-active: #3a404c;
+    --text: #e8eaee; --muted: #8b919c; --accent: #6c5ce7; --power: #e5484d;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 15px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+  main { max-width: 360px; margin: 0 auto; padding: 16px 16px 32px; }
+  .remote { background: var(--body); border-radius: 36px; padding: 20px 18px 26px;
+    display: grid; gap: 20px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .tv-name { font-weight: 600; font-size: 14px; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted); margin-right: 6px; vertical-align: middle; }
+  .dot.on { background: #30a46c; } .dot.err { background: var(--power); }
+  button { font: inherit; color: var(--text); background: var(--btn); border: 0;
+    border-radius: 14px; min-height: 52px; cursor: pointer; display: grid; place-items: center; }
+  button:active, button.pressed { background: var(--btn-active); transform: scale(.96); }
+  button:disabled { opacity: .3; pointer-events: none; }
+  button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .power { background: var(--power); width: 52px; height: 52px; border-radius: 50%; flex: none; }
+  .power:active { background: #c4363b; }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .dpad { position: relative; width: 240px; height: 240px; margin: 0 auto;
+    border-radius: 50%; background: var(--btn); }
+  .dpad button { position: absolute; background: transparent; border-radius: 0; min-height: 0; }
+  .dpad button:active { background: rgba(255,255,255,.08); }
+  .dpad .up    { top: 0; left: 80px; width: 80px; height: 80px; border-radius: 40px 40px 0 0; }
+  .dpad .down  { bottom: 0; left: 80px; width: 80px; height: 80px; border-radius: 0 0 40px 40px; }
+  .dpad .left  { left: 0; top: 80px; width: 80px; height: 80px; border-radius: 40px 0 0 40px; }
+  .dpad .right { right: 0; top: 80px; width: 80px; height: 80px; border-radius: 0 40px 40px 0; }
+  .dpad .ok { top: 70px; left: 70px; width: 100px; height: 100px; border-radius: 50%;
+    background: var(--accent); font-weight: 700; letter-spacing: .5px; }
+  .dpad .ok:active { background: #5a4bd1; }
+  .side { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
+  .rocker { display: grid; grid-template-rows: 1fr auto 1fr; border-radius: 26px;
+    background: var(--btn); overflow: hidden; }
+  .rocker button { border-radius: 0; background: transparent; min-height: 60px; }
+  .rocker button:active { background: var(--btn-active); }
+  .rocker span { text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .stack { display: grid; gap: 12px; }
+  .label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .withlabel { display: grid; gap: 2px; place-items: center; padding: 6px 0; }
+  select { width: 100%; font: inherit; color: var(--text); background: var(--btn);
+    border: 0; border-radius: 14px; padding: 14px; appearance: none; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: #2b1a1c; color: #ffb4b6; padding: 10px 16px; border-radius: 12px;
+    font-size: 13px; max-width: calc(100% - 32px); opacity: 0; transition: opacity .2s;
+    pointer-events: none; }
+  #toast.show { opacity: 1; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="remote">
+    <header>
+      <div class="tv-name"><span class="dot" id="dot"></span><span id="name">Connecting…</span></div>
+      <button class="power" data-cmd="power/toggle" aria-label="Power" data-need="power">
+        <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/></svg>
+      </button>
+    </header>
+
+    <div class="row">
+      <button data-cmd="key/back" data-need="keys" aria-label="Back" class="withlabel">
+        <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+      </button>
+      <button data-cmd="key/exit" data-need="keys" aria-label="Home" class="withlabel">
+        <svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>
+      </button>
+      <button data-cmd="settings" data-need="settings" aria-label="Settings menu" class="withlabel">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+
+    <div class="dpad">
+      <button class="up" data-cmd="key/up" data-need="keys" data-repeat aria-label="Up">
+        <svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
+      <button class="left" data-cmd="key/left" data-need="keys" data-repeat aria-label="Left">
+        <svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+      <button class="ok" data-cmd="key/select" data-need="keys" aria-label="OK">OK</button>
+      <button class="right" data-cmd="key/right" data-need="keys" data-repeat aria-label="Right">
+        <svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+      <button class="down" data-cmd="key/down" data-need="keys" data-repeat aria-label="Down">
+        <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+
+    <div class="side">
+      <div class="rocker">
+        <button data-cmd="volume/up" data-need="volume" data-repeat aria-label="Volume up">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <span>VOL</span>
+        <button data-cmd="volume/down" data-need="volume" data-repeat aria-label="Volume down">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      </div>
+      <div class="stack">
+        <button data-cmd="mute" data-need="mute" aria-label="Mute">
+          <svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 9 4 6M21 9l-4 6"/></svg></button>
+        <button data-cmd="key/info" data-need="keys" aria-label="Info">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
+      </div>
+    </div>
+
+    <div class="row">
+      <button data-cmd="key/rewind" data-need="keys" data-repeat aria-label="Rewind">
+        <svg viewBox="0 0 24 24"><path d="M11 6 4 12l7 6zM20 6l-7 6 7 6z"/></svg></button>
+      <button data-cmd="key/play_pause" data-need="keys" aria-label="Play/Pause">
+        <svg viewBox="0 0 24 24"><path d="M7 5v14l11-7z"/></svg></button>
+      <button data-cmd="key/fast_forward" data-need="keys" data-repeat aria-label="Fast forward">
+        <svg viewBox="0 0 24 24"><path d="m13 6 7 6-7 6zM4 6l7 6-7 6z"/></svg></button>
+    </div>
+
+    <select id="input" class="hidden" aria-label="Input source"></select>
+  </div>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let toastTimer;
+
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+async function send(cmd) {
+  if (navigator.vibrate) navigator.vibrate(12);
+  try {
+    const res = await fetch("/api/" + cmd, { method: "POST" });
+    if (!res.ok) throw new Error(await res.text() || res.statusText);
+    $("#dot").className = "dot on";
+  } catch (e) {
+    $("#dot").className = "dot err";
+    toast(e.message || "Couldn't reach the remote server");
+  }
+}
+
+// Tap sends once; holding arrows/volume/seek repeats like a real remote.
+document.querySelectorAll("button[data-cmd]").forEach((btn) => {
+  let timer, delay;
+  const stop = () => { clearTimeout(timer); clearInterval(delay); btn.classList.remove("pressed"); };
+  btn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    btn.classList.add("pressed");
+    send(btn.dataset.cmd);
+    if (btn.hasAttribute("data-repeat")) {
+      timer = setTimeout(() => { delay = setInterval(() => send(btn.dataset.cmd), 180); }, 450);
+    }
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => btn.addEventListener(ev, stop));
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+});
+
+// Keyboard shortcuts when used on a computer.
+const KEYS = { ArrowUp: "key/up", ArrowDown: "key/down", ArrowLeft: "key/left",
+  ArrowRight: "key/right", Enter: "key/select", Backspace: "key/back", Escape: "key/exit",
+  " ": "key/play_pause", "+": "volume/up", "=": "volume/up", "-": "volume/down",
+  m: "mute", i: "key/info", p: "power/toggle" };
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "SELECT" || e.metaKey || e.ctrlKey) return;
+  const cmd = KEYS[e.key];
+  if (cmd) { e.preventDefault(); send(cmd); }
+});
+
+$("#input").addEventListener("change", (e) => send("input/" + e.target.value));
+
+async function refresh() {
+  try {
+    const res = await fetch("/api/status");
+    if (!res.ok) throw new Error(await res.text());
+    const s = await res.json();
+    $("#name").textContent = s.name;
+    $("#dot").className = "dot " + (s.power ? "on" : "");
+    document.querySelectorAll("[data-need]").forEach((b) => { b.disabled = !s.supports[b.dataset.need]; });
+    const sel = $("#input");
+    if (s.supports.inputs) {
+      sel.classList.remove("hidden");
+      if (sel.options.length !== s.inputs.length) {
+        sel.innerHTML = "";
+        s.inputs.forEach((i) => sel.add(new Option(i.name, i.id)));
+      }
+      if (s.input != null && document.activeElement !== sel) sel.value = s.input;
+    }
+  } catch (e) {
+    $("#name").textContent = "TV not reachable";
+    $("#dot").className = "dot err";
+  }
+}
+refresh();
+setInterval(refresh, 10000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+</script>
+</body>
+</html>
