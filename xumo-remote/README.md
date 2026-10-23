@@ -16,7 +16,7 @@ Turn on HomeKit / AirPlay in the TV's settings so it shows a HomeKit setup code.
 
 ```sh
 pkg install python git
-git clone https://github.com/mystawils0n/colors && cd colors/xumo-remote
+git clone https://github.com/mystawils0n/Colors && cd Colors/xumo-remote
 pip install -r requirements.txt
 ```
 
